@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>যুলোজি অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "প্রজাপতি এর প্রতিসাম্যতা কোন ধরনের?",
+          options: {
+            a: "অরীয়",
+            b: "দ্বিঅরীয়",
+            c: "অপ্রতিসাম্য",
+            d: "দ্বিপার্শ্বীয়",
+          },
+          correct: "d",
+          explanation:
+            "<p>দ্বিপার্শ্বীয় প্রতিসাম্য হলো এমন একটি অবস্থা যেখানে প্রাণীর দেহকে শুধু কেন্দ্রীয় অক্ষ বরাবর একবার ছেদ করলে দুটি সমান ও সদৃশ অংশে বিভক্ত করা যায়।</p><p>প্রজাপতির দেহের গঠন এমনই। প্রজাপতির একটি ডান ও একটি বাম দিক রয়েছে যা একে অপরের প্রতিচ্ছবি।</p>",
+        },
+        {
+          id: 2,
+          question: "নিচের কোনটি দ্বিস্তরী?",
+          options: {
+            a: "ফিতা কৃমি",
+            b: "হাইড্রা",
+            c: "জোঁক",
+            d: "ম্যালেরিয়ার জীবাণু",
+          },
+          correct: "b",
+          explanation:
+            "<p>হাইড্রা দ্বিস্তরী প্রাণী, অর্থাৎ এদের ভ্রূণীয় দশায় দুটি জননস্তর থাকে।</p><ul><li>এই স্তরগুলো হলো একটোডার্ম ও এন্ডোডার্ম।</li><li>এই দুটি জননস্তর থেকেই প্রাপ্তবয়স্ক প্রাণীর দেহ গঠিত হয়।</li><li>অন্যদিকে, ফিতা কৃমি ও জোঁক ত্রিস্তরী প্রাণী।</li></ul>",
+        },
+        {
+          id: 3,
+          question: "সিলোমহীন পর্ব কোনটি?",
+          options: {
+            a: "Nematoda",
+            b: "Platyhelminthes",
+            c: "Annelida",
+            d: "Cnidaria",
+          },
+          correct: "b",
+          explanation:
+            "<p>প্লাটিহেলমিন্থেস পর্বের প্রাণীরা সিলোমহীন বা অ্যাসিলোমেট।</p><ul><li>এদের দেহপ্রাচীর এবং পৌষ্টিকনালীর মধ্যবর্তী স্থানে কোনো প্রকৃত সিলোম বা দেহগহ্বর থাকে না।</li><li>এই স্থানটি প্যারেনকাইমা নামক টিস্যু দ্বারা পূর্ণ থাকে।</li></ul>",
+        },
+        {
+          id: 4,
+          question: "শ্রেণিবিন্যাসবিদ্যার জনক কে?",
+          options: {
+            a: "Carolus Linnaeus",
+            b: "George Benthum",
+            c: "Theophrastus",
+            d: "de Candolle",
+          },
+          correct: "a",
+          explanation:
+            "<p>ক্যারোলাস লিনিয়াসকে শ্রেণিবিন্যাসবিদ্যার জনক বলা হয়।</p><ul><li>তিনি জীবের নামকরণের দ্বিপদ নামকরণ পদ্ধতি প্রবর্তন করেন, যা আজও বিশ্বব্যাপী ব্যবহৃত হয়।</li><li>তার রচিত 'সিস্টেমা ন্যাচারি' বইটি শ্রেণিবিন্যাসের ক্ষেত্রে একটি মাইলফলক।</li></ul>",
+        },
+        {
+          id: 5,
+          question:
+            "প্রাণিদেহে সদৃশ একাধিক অংশের রৈখিক বা অনুদৈর্ঘ্য পুনরাবৃত্তিকে বলে-",
+          options: {
+            a: "প্রান্তিকতা",
+            b: "খণ্ডায়ন",
+            c: "প্রতিসাম্যতা",
+            d: "মেটামেরিজম",
+          },
+          correct: "b",
+          explanation:
+            "<p>প্রাণিদেহে সদৃশ একাধিক অংশের রৈখিক বা অনুদৈর্ঘ্য পুনরাবৃত্তিকে খণ্ডায়ন বলে।</p><ul><li>এই বৈশিষ্ট্যটি অনেক অমেরুদণ্ডী প্রাণীতে দেখা যায়, যেমন কেঁচো।</li><li>এটি প্রাণীর চলাচলে এবং দেহের কার্যক্রমে বিশেষ ভূমিকা পালন করে।</li></ul>",
+        },
+        {
+          id: 6,
+          question: "সিলোমযুক্ত প্রাণী কোনটি?",
+          options: {
+            a: "স্পঞ্জ",
+            b: "Fasciola hepatica",
+            c: "জেলিফিস",
+            d: "Chordata",
+          },
+          correct: "d",
+          explanation:
+            "<p>কর্ডাটা পর্বের প্রাণীরা প্রকৃত সিলোমযুক্ত প্রাণী।</p><ul><li>এদের দেহপ্রাচীর এবং পৌষ্টিকনালীর মধ্যবর্তী স্থানে মেসোডার্মাল কোষ দ্বারা আবৃত একটি প্রকৃত দেহগহ্বর থাকে।</li><li>এই সিলোম বিভিন্ন অঙ্গকে সুরক্ষা দেয় এবং তাদের সঞ্চালনে সাহায্য করে।</li></ul>",
+        },
+        {
+          id: 7,
+          question: "নিচের কোনটি দ্বিঅরীয় প্রতিসাম্য প্রাণির উদাহরণ?",
+          options: {
+            a: "হাইড্রা",
+            b: "জেলি ফিস",
+            c: "টিনোফেরা",
+            d: "সী অ্যানিমন",
+          },
+          correct: "c",
+          explanation:
+            "<p>টিনোফেরা পর্বের প্রাণীরা দ্বিঅরীয় প্রতিসাম্য প্রদর্শন করে।</p><ul><li>এদের দেহকে কেন্দ্রীয় অক্ষ বরাবর দুটি তলে ছেদ করলে দুটি সমান অংশে ভাগ করা যায়।</li><li>তবে এই দুটি সমান অংশ একে অপরের প্রতিচ্ছবি নয়।</li></ul>",
+        },
+        {
+          id: 8,
+          question: "স্যুডোসিলোমেট/ভ্রান্ত সিলোমযুক্ত প্রাণির পর্ব কোনটি?",
+          options: {
+            a: "Platyhelminthes",
+            b: "Nematoda",
+            c: "Arthropoda",
+            d: "Cnidaria",
+          },
+          correct: "b",
+          explanation:
+            "<p>নেমাটোডা পর্বের প্রাণীরা স্যুডোসিলোমেট বা ভ্রান্ত সিলোমযুক্ত।</p><ul><li>এদের দেহগহ্বরটি মেসোডার্ম দ্বারা সম্পূর্ণরূপে আবৃত থাকে না।</li><li>এই বৈশিষ্ট্যটি এদেরকে অন্যান্য সিলোমহীন বা প্রকৃত সিলোমযুক্ত প্রাণীদের থেকে আলাদা করে।</li></ul>",
+        },
+        {
+          id: 9,
+          question: "মরুভূমি, বনভূমি, তৃণভূমি ইত্যাদি কোন ধরনের বৈচিত্র্য?",
+          options: {
+            a: "বাস্তুতান্ত্রিক",
+            b: "জিনগত",
+            c: "প্রজাতিগত",
+            d: "প্রাকৃতিক",
+          },
+          correct: "a",
+          explanation:
+            "<p>মরুভূমি, বনভূমি, তৃণভূমি ইত্যাদি বাস্তুতান্ত্রিক বৈচিত্র্য।</p><ul><li>এটি একটি নির্দিষ্ট অঞ্চলের বিভিন্ন বাস্তুতন্ত্রের প্রকারভেদকে নির্দেশ করে, যেখানে বিভিন্ন প্রজাতির জীব বাস করে এবং একে অপরের সাথে মিথস্ক্রিয়া করে।</li></ul>",
+        },
+        {
+          id: 10,
+          question:
+            "অক্ষের সাথে সামঞ্জস্য রেখে প্রাণিদেহের বিভিন্ন অংশের বিভাজন প্রকৃতিকে কী বলে?",
+          options: {
+            a: "প্রান্তিকতা",
+            b: "প্রতিসাম্যতা",
+            c: "খণ্ডায়ন",
+            d: "মেটামেরিজম",
+          },
+          correct: "b",
+          explanation:
+            "<p>অক্ষের সাথে সামঞ্জস্য রেখে প্রাণিদেহের বিভিন্ন অংশের বিভাজন প্রকৃতিকে প্রতিসাম্যতা বলে।</p><ul><li>এটি প্রাণীদের দেহের গঠন এবং অভিযোজনে গুরুত্বপূর্ণ ভূমিকা পালন করে।</li><li>প্রতিসাম্যতার ধরন অনুসারে প্রাণীদের বিভিন্ন শ্রেণিতে ভাগ করা হয়।</li></ul>",
+        },
+        {
+          id: 11,
+          question: "শ্রেণিবিন্যাসের সর্বনিম্ন ধাপ কোনটি?",
+          options: {
+            a: "Order",
+            b: "Family",
+            c: "Genus",
+            d: "Species",
+          },
+          correct: "d",
+          explanation:
+            "<p>শ্রেণিবিন্যাসের সর্বনিম্ন ধাপ হলো প্রজাতি (Species)।</p><ul><li>প্রজাতির অন্তর্ভুক্ত জীবদের মধ্যে প্রজননগত মিল থাকে এবং তারা উর্বর সন্তান উৎপন্ন করতে পারে।</li><li>শ্রেণিবিন্যাসের প্রতিটি ধাপে জীবের বৈশিষ্ট্যগুলো আরও সুনির্দিষ্ট হয়।</li></ul>",
+        },
+        {
+          id: 12,
+          question: "বাংলাদেশ কোন জীববৈচিত্র্য হট-স্পটের অন্তর্গত?",
+          options: {
+            a: "মালয়",
+            b: "ইন্দো-বার্মা",
+            c: "ইন্ডিয়ান",
+            d: "হিমালয়ান",
+          },
+          correct: "b",
+          explanation:
+            "<p>বাংলাদেশ ইন্দো-বার্মা জীববৈচিত্র্য হট-স্পটের অন্তর্গত।</p><ul><li>এই অঞ্চলটি বিশ্বের অন্যতম সমৃদ্ধ জীববৈচিত্র্যপূর্ণ এলাকা, যেখানে বহু স্থানীয় প্রজাতির উদ্ভিদ ও প্রাণী বিদ্যমান।</li><li>এটি সংরক্ষণ কার্যক্রমের জন্য অত্যন্ত গুরুত্বপূর্ণ।</li></ul>",
+        },
+        {
+          id: 13,
+          question:
+            "যখন কোন প্রাণির দেহকে অক্ষ বরাবর ছেদ করলে একবারও সমান দুটি অংশে ভাগ করা যায় না, তাকে অপ্রতিসাম্য বলে। নিম্নের কোন প্রাণিটি অপ্রতিসাম্য?",
+          options: {
+            a: "হাইড্রা",
+            b: "তেলাপোকা",
+            c: "শামুক",
+            d: "ব্যাঙ",
+          },
+          correct: "c",
+          explanation:
+            "<p>শামুক একটি অপ্রতিসাম্য প্রাণী।</p><ul><li>এদের দেহের গঠন অসম, অর্থাৎ এদের দেহকে অক্ষ বরাবর ছেদ করলে কোনোভাবেই দুটি সমান অংশে ভাগ করা যায় না।</li><li>এটি এদের বিশেষ ধরনের জীবনযাত্রার সাথে সম্পর্কিত।</li></ul>",
+        },
+        {
+          id: 14,
+          question: "পৃথিবীর আদিপ্রাণী যে পর্বের অন্তর্ভুক্ত তা হলো-",
+          options: {
+            a: "সিলেনটারেটা",
+            b: "পরিফেরা",
+            c: "প্রোটোজোয়া",
+            d: "কর্ডাটা",
+          },
+          correct: "c",
+          explanation:
+            "<p>পৃথিবীর আদিপ্রাণী প্রোটোজোয়া পর্বের অন্তর্ভুক্ত।</p><ul><li>এই পর্বের প্রাণীরা এককোষী এবং সরল প্রকৃতির।</li><li>এরা বিবর্তনের ধারায় প্রথম দিকের প্রাণীদের প্রতিনিধিত্ব করে এবং বিভিন্ন পরিবেশগত পরিস্থিতিতে অভিযোজিত হয়েছে।</li></ul>",
+        },
+        {
+          id: 15,
+          question: "নিচের কোন পর্বের প্রাণী কোষীয় সংগঠন মাত্রার?",
+          options: {
+            a: "Porifera",
+            b: "Cnidaria",
+            c: "Annelida",
+            d: "Nematoda",
+          },
+          correct: "a",
+          explanation:
+            "<p>পোরিফেরা পর্বের প্রাণীরা কোষীয় সংগঠন মাত্রার।</p><ul><li>এদের দেহে কোষগুলো একত্রিত হয়ে কলা বা টিস্যু গঠন করে না, বরং কোষগুলো আলগাভাবে সজ্জিত থাকে এবং প্রতিটি কোষ স্বতন্ত্রভাবে কাজ করে।</li></ul>",
+        },
+        {
+          id: 16,
+          question: "নিচের কোনটিতে স্যুডোসিলোম দেখা যায়?",
+          options: {
+            a: "Fasciola hepatica",
+            b: "Taenia solium",
+            c: "Ascaris lumbricoides",
+            d: "Metaphire posthuma",
+          },
+          correct: "c",
+          explanation:
+            "<p>Ascaris lumbricoides (গোলকৃমি) হলো স্যুডোসিলোমেট বা ভ্রান্ত সিলোমযুক্ত প্রাণী।</p><ul><li>এদের দেহগহ্বরটি মেসোডার্ম দ্বারা সম্পূর্ণরূপে আবৃত থাকে না।</li><li>এই বৈশিষ্ট্যটি নেমাটোডা পর্বের প্রাণীদের একটি প্রধান বৈশিষ্ট্য।</li></ul>",
+        },
+        {
+          id: 17,
+          question: "অপ্রতিসাম্যতার উদাহরণ কোনটি?",
+          options: {
+            a: "Pila",
+            b: "Labeo",
+            c: "Hydra",
+            d: "Metaphire",
+          },
+          correct: "a",
+          explanation:
+            "<p>Pila (শামুক) অপ্রতিসাম্য প্রাণীর একটি উদাহরণ।</p><ul><li>এদের দেহের গঠন অপ্রতিসম, অর্থাৎ এদেরকে কোনো অক্ষ বরাবর ছেদ করলে সমান দুটি অংশে ভাগ করা যায় না।</li><li>এটি এদের শারীরিক গঠনের একটি স্বতন্ত্র বৈশিষ্ট্য।</li></ul>",
+        },
+        {
+          id: 18,
+          question: "নিচের কোন প্রাণী অ্যাসিলোমেট?",
+          options: {
+            a: "Ascaris lumbricoides",
+            b: "Taenia solium",
+            c: "Metaphire posthuma",
+            d: "Julus terrestri",
+          },
+          correct: "b",
+          explanation:
+            "<p>Taenia solium বা ফিতা কৃমি অ্যাসিলোমেট বা সিলোমহীন প্রাণী।</p><ul><li>এদের দেহপ্রাচীর এবং পৌষ্টিকনালীর মধ্যবর্তী স্থানে কোনো প্রকৃত দেহগহ্বর থাকে না।</li><li>এই স্থানটি প্যারেনকাইমা নামক যোজক কলা দ্বারা পূর্ণ থাকে, যা এদেরকে সিলোমহীন প্রাণীদের অন্তর্ভুক্ত করে।</li></ul>",
+        },
+        {
+          id: 19,
+          question: "কোনটি অরীয় প্রতিসম প্রাণী?",
+          options: {
+            a: "কীট পতঙ্গ",
+            b: "হাইড্রা",
+            c: "তারা মাছ",
+            d: "স্পঞ্জ",
+          },
+          correct: "b",
+          explanation:
+            "<p>হাইড্রা একটি অরীয় প্রতিসম প্রাণী।</p><ul><li>এদের দেহের কেন্দ্রীয় অক্ষ বরাবর যেকোনো তল দিয়ে ছেদ করলে দুটি সমান ও সদৃশ অংশে ভাগ করা যায়।</li><li>এটি এদের দেহের সরল গঠন এবং নিশ্চল জীবনযাত্রার সাথে সম্পর্কিত।</li></ul>",
+        },
+        {
+          id: 20,
+          question: "কলা সংগঠন মাত্রার পর্ব হলো-",
+          options: {
+            a: "Porifera",
+            b: "Cnidaria",
+            c: "Nematoda",
+            d: "Chordata",
+          },
+          correct: "b",
+          explanation:
+            "<p>কনিডারিয়া পর্বের প্রাণীরা কলা সংগঠন মাত্রার।</p><ul><li>এই পর্বের প্রাণীদের দেহে কোষগুলো একত্রিত হয়ে কলা বা টিস্যু গঠন করে, যা নির্দিষ্ট কাজ সম্পাদন করে।</li><li>তবে এদের মধ্যে অঙ্গ বা তন্ত্র গঠিত হয় না।</li></ul>",
+        },
+        {
+          id: 21,
+          question: "শ্রেণিকরণের যে কোনো ধাপের জনগোষ্ঠীকে বলে-",
+          options: {
+            a: "প্রজাতি",
+            b: "গণ",
+            c: "ট্যাক্সন",
+            d: "পর্ব",
+          },
+          correct: "c",
+          explanation:
+            "<p>শ্রেণিকরণের যে কোনো ধাপের জনগোষ্ঠীকে ট্যাক্সন বলা হয়।</p><ul><li>ট্যাক্সন হলো শ্রেণিবিন্যাসের একটি একক, যা নির্দিষ্ট বৈশিষ্ট্যের ভিত্তিতে জীবদের শ্রেণিবিন্যাস করা হয়।</li><li>যেমন: প্রজাতি, গণ, পরিবার, বর্গ, শ্রেণি, পর্ব, জগৎ ইত্যাদি প্রতিটিই একটি ট্যাক্সন।</li></ul>",
+        },
+        {
+          id: 22,
+          question: "কোনটি অপ্রতিসম প্রাণী?",
+          options: {
+            a: "ইলিশ",
+            b: "তারামাছ",
+            c: "হাইড্রা",
+            d: "অ্যামিবা",
+          },
+          correct: "d",
+          explanation:
+            "<p>অ্যামিবা একটি অপ্রতিসম প্রাণী।</p><ul><li>এদের দেহের নির্দিষ্ট কোনো আকৃতি নেই এবং প্রতিনিয়ত দেহের আকার পরিবর্তিত হয়।</li><li>তাই এদের দেহকে অক্ষ বরাবর ছেদ করলে কোনোভাবেই সমান দুটি অংশে ভাগ করা যায় না।</li></ul>",
+        },
+        {
+          id: 23,
+          question: "প্রতিসাম্যতা হলো-",
+          options: {
+            a: "তিনটি ভ্রূণস্তরবিশিষ্ট দশা",
+            b: "যে কোনো তলের ভিত্তিতে প্রাণির আঙ্গিক অবস্থা",
+            c: "একই ধরনের খণ্ডাংশবিশিষ্ট অবস্থা",
+            d: "প্রাণিকে কয়েকটি অঞ্চলে বিভাজনের পদ্ধতি",
+          },
+          correct: "b",
+          explanation:
+            "<p>প্রতিসাম্যতা হলো প্রাণিদেহের একটি আঙ্গিক অবস্থা, যেখানে দেহের বিভিন্ন অংশ একটি নির্দিষ্ট অক্ষ বা তলের ভিত্তিতে সুষমভাবে বিন্যস্ত থাকে।</p><ul><li>এর ওপর ভিত্তি করে প্রাণীদের দেহকে সমান অংশে বিভক্ত করা যায়।</li></ul>",
+        },
+        {
+          id: 24,
+          question: "ICZN কোনটির সংক্ষিপ্ত রূপ?",
+          options: {
+            a: "International Commission on Zoological Nomenclature",
+            b: "International Code of Zoological Nomenclature",
+            c: "International Code on Zoological Nomenclature",
+            d: "International Commission of Zoological Nomenclature",
+          },
+          correct: "b",
+          explanation:
+            "<p>ICZN হলো International Code of Zoological Nomenclature এর সংক্ষিপ্ত রূপ।</p><ul><li>এটি প্রাণীদের নামকরণের আন্তর্জাতিক নিয়মাবলী, যা বিশ্বব্যাপী প্রাণিবিজ্ঞানীরা ব্যবহার করে থাকেন।</li><li>এর মাধ্যমে প্রাণীদের নামকরণের একটি সুনির্দিষ্ট ও সর্বজনীন পদ্ধতি নিশ্চিত করা হয়।</li></ul>",
+        },
+        {
+          id: 25,
+          question: "শ্রেণিবিন্যাসের সবচেয়ে বড় একক কোনটি?",
+          options: {
+            a: "Phylum",
+            b: "Class",
+            c: "Order",
+            d: "Family",
+          },
+          correct: "a",
+          explanation:
+            "<p>শ্রেণিবিন্যাসের সবচেয়ে বড় একক হলো পর্ব (Phylum)।</p><ul><li>এই এককটি বিভিন্ন শ্রেণিকে অন্তর্ভুক্ত করে এবং এতে অন্তর্ভুক্ত প্রাণীদের মধ্যে সাধারণ বৈশিষ্ট্যগুলো দেখা যায়।</li><li>পর্বের উপরে শুধুমাত্র জগৎ (Kingdom) এককটি থাকে।</li></ul>",
+        },
+        {
+          id: 26,
+          question: "প্রাণিদেহের বিভিন্ন অঙ্গ-প্রত্যঙ্গ সৃষ্টি হয় কোথা থেকে?",
+          options: {
+            a: "সিলোম",
+            b: "ভ্রূণস্তর",
+            c: "খণ্ডক",
+            d: "নটোকর্ড",
+          },
+          correct: "b",
+          explanation:
+            "<p>প্রাণিদেহের বিভিন্ন অঙ্গ-প্রত্যঙ্গ ভ্রূণস্তর থেকে সৃষ্টি হয়।</p><ul><li>ভ্রূণের প্রাথমিক দশায় একটোডার্ম, মেসোডার্ম এবং এন্ডোডার্ম নামক তিনটি জননস্তর গঠিত হয়।</li><li>এই জননস্তরগুলো থেকেই দেহের বিভিন্ন অঙ্গ ও তন্ত্রের উৎপত্তি ঘটে।</li></ul>",
+        },
+        {
+          id: 27,
+          question: "সিলোমহীন পর্ব কোনটি?",
+          options: {
+            a: "Nematoda",
+            b: "Annelida",
+            c: "Platyhelminthes",
+            d: "Chordata",
+          },
+          correct: "c",
+          explanation:
+            "<p>প্লাটিহেলমিন্থেস পর্বের প্রাণীরা সিলোমহীন বা অ্যাসিলোমেট।</p><ul><li>এদের দেহে কোনো প্রকৃত সিলোম বা দেহগহ্বর থাকে না।</li><li>দেহপ্রাচীর এবং পৌষ্টিকনালীর মধ্যবর্তী স্থানটি প্যারেনকাইমা নামক টিস্যু দ্বারা পূর্ণ থাকে।</li></ul>",
+        },
+        {
+          id: 28,
+          question: "জীবাশ্ম নিয়ে আলোচনা করা হয় যে শাখায়-",
+          options: {
+            a: "Ecology",
+            b: "Evolution",
+            c: "Limnology",
+            d: "Palaeontology",
+          },
+          correct: "d",
+          explanation:
+            "<p>জীবাশ্ম নিয়ে আলোচনা করা হয় জীবাশ্মবিজ্ঞান বা Palaeontology শাখায়।</p><ul><li>এই বিজ্ঞান শাখায় প্রাচীন জীবদেহের অবশেষ বা তাদের ছাপ নিয়ে গবেষণা করা হয়।</li><li>যা পৃথিবীর ভূতাত্ত্বিক ইতিহাস এবং জীবের বিবর্তন সম্পর্কে ধারণা দেয়।</li></ul>",
+        },
+        {
+          id: 29,
+          question: "নিম্নের কোনটি বহুকোষী নয়?",
+          options: {
+            a: "হাইড্রা ভালগারিস",
+            b: "এনটামিবা হিস্টোলাইটিকা",
+            c: "হোমো সেপিয়ানস",
+            d: "টিউনিলোসা ইলিশা",
+          },
+          correct: "b",
+          explanation:
+            "<p>এনটামিবা হিস্টোলাইটিকা একটি এককোষী জীব, এটি বহুকোষী নয়।</p><ul><li>এটি প্রোটোজোয়া পর্বের অন্তর্ভুক্ত এবং অ্যামিবিক ডিসেন্ট্রির জন্য দায়ী।</li><li>অন্যদিকে, হাইড্রা, হোমো সেপিয়ানস এবং টিউনিলোসা ইলিশা (ইলিশ মাছ) বহুকোষী প্রাণী।</li></ul>",
+        },
+        {
+          id: 30,
+          question: "কোন প্রাণিতে অরীয় ক্লিভেজ ঘটে?",
+          options: {
+            a: "ঘাসফড়িং",
+            b: "ঝিনুক",
+            c: "কেঁচো",
+            d: "শামুক",
+          },
+          correct: "a",
+          explanation:
+            "<p>ঘাসফড়িংয়ে অরীয় ক্লিভেজ ঘটে না। ঘাসফড়িংয়ে সর্পিল ক্লিভেজ দেখা যায়।</p><ul><li>সাধারণত, অরীয় ক্লিভেজ একাইনোডার্মাটা পর্বের প্রাণীদের (যেমন তারামাছ) এবং কর্ডাটা পর্বের প্রাণীদের মধ্যে দেখা যায়।</li><li>এই ক্লিভেজে কোষ বিভাজন অক্ষের সমান্তরাল বা লম্বভাবে ঘটে।</li></ul>",
+        },
+        {
+          id: 31,
+          question: "Volvox-এ কোন ধরনের প্রতিসাম্য দেখা যায়?",
+          options: {
+            a: "গোলীয়",
+            b: "অরীয়",
+            c: "দ্বি-পার্শ্বীয়",
+            d: "অপ্রতিসাম্য",
+          },
+          correct: "a",
+          explanation:
+            "<p>Volvox-এ গোলীয় প্রতিসাম্য দেখা যায়।</p><ul><li>Volvox হলো কলোনিয়াল সবুজ শৈবাল, যার একটি গোলাকার বা ডিম্বাকার কলোনিতে হাজার হাজার কোষ নির্দিষ্ট বিন্যাসে সাজানো থাকে।</li><li>এদের দেহকে যেকোনো তল বরাবর ছেদ করলে দুটি সমান অংশে ভাগ করা যায়।</li></ul>",
+        },
+        {
+          id: 32,
+          question: "কোন পর্বটি সিলোমবিহীন?",
+          options: {
+            a: "Cnidaria",
+            b: "Mollusca",
+            c: "Arthropoda",
+            d: "Echinodermata",
+          },
+          correct: "a",
+          explanation:
+            "<p>কনিডারিয়া পর্বের প্রাণীরা সিলোমবিহীন বা অ্যাসিলোমেট।</p><ul><li>এদের দেহে কোনো প্রকৃত দেহগহ্বর থাকে না।</li><li>এরা দ্বিস্তরী প্রাণী এবং এদের দেহপ্রাচীর ও পৌষ্টিকনালীর মধ্যবর্তী স্থান মেসোগ্লিয়া দ্বারা পূর্ণ থাকে।</li></ul>",
+        },
+        {
+          id: 33,
+          question: "প্রকৃত সিলোমযুক্ত প্রাণী কোনটি?",
+          options: {
+            a: "Taenia solium",
+            b: "Ascaris lumbricoides",
+            c: "Metaphire posthuma",
+            d: "Fasciola hepatica",
+          },
+          correct: "c",
+          explanation:
+            "<p>Metaphire posthuma (কেঁচো) প্রকৃত সিলোমযুক্ত প্রাণী।</p><ul><li>এদের দেহপ্রাচীর এবং পৌষ্টিকনালীর মধ্যবর্তী স্থানে মেসোডার্মাল কোষ দ্বারা আবৃত একটি প্রকৃত দেহগহ্বর থাকে।</li><li>এটি অ্যানিলিডা পর্বের প্রাণীদের একটি অন্যতম বৈশিষ্ট্য।</li></ul>",
+        },
+        {
+          id: 34,
+          question: "‘অঞ্চলায়ন’ কোন পর্বের শ্রেণিবিন্যাসের জন্য গুরুত্বপূর্ণ?",
+          options: {
+            a: "Mollusca",
+            b: "Arthropoda",
+            c: "Annelida",
+            d: "Echinodermata",
+          },
+          correct: "b",
+          explanation:
+            "<p>'অঞ্চলায়ন' আর্থ্রোপোডা পর্বের শ্রেণিবিন্যাসের জন্য অত্যন্ত গুরুত্বপূর্ণ।</p><ul><li>এই পর্বের প্রাণীদের দেহ মাথা, বক্ষ এবং উদর - এই তিনটি সুনির্দিষ্ট অঞ্চলে বিভক্ত থাকে।</li><li>এই অঞ্চলায়ন আর্থ্রোপোডাদের বিভিন্ন শ্রেণিকে চিহ্নিত করতে সাহায্য করে।</li></ul>",
+        },
+        {
+          id: 35,
+          question: "প্রাণিজগতের ভিন্নতার কারণ কী?",
+          options: {
+            a: "প্রজাতিগত বৈচিত্র্য",
+            b: "আচরণগত বৈচিত্র্য",
+            c: "খাদ্যাভ্যাসগত বৈচিত্র্য",
+            d: "চলাচলগত বৈচিত্র্য",
+          },
+          correct: "a",
+          explanation:
+            "<p>প্রাণিজগতের ভিন্নতার প্রধান কারণ হলো প্রজাতিগত বৈচিত্র্য।</p><ul><li>এটি নির্দিষ্ট ভৌগোলিক এলাকায় বিদ্যমান বিভিন্ন প্রজাতির জীবদের ভিন্নতাকে নির্দেশ করে।</li><li>এই বৈচিত্র্য বাস্তুতন্ত্রের ভারসাম্য রক্ষায় গুরুত্বপূর্ণ ভূমিকা পালন করে।</li></ul>",
+        },
+        {
+          id: 36,
+          question: "প্রাণিজগতের প্রথম ত্রিস্তরী প্রাণী কারা?",
+          options: {
+            a: "Cnidaria",
+            b: "Porifera",
+            c: "Platyhelminthes",
+            d: "Mollusca",
+          },
+          correct: "c",
+          explanation:
+            "<p>প্লাটিহেলমিন্থেস পর্বের প্রাণীরা হলো প্রাণিজগতের প্রথম ত্রিস্তরী প্রাণী।</p><ul><li>এদের ভ্রূণীয় দশায় তিনটি জননস্তর থাকে: একটোডার্ম, মেসোডার্ম এবং এন্ডোডার্ম।</li><li>এই মেসোডার্ম স্তরটি প্রথম এই পর্বের প্রাণীদের মধ্যে বিকশিত হয়।</li></ul>",
+        },
+        {
+          id: 37,
+          question: "প্রাণিবিদ্যার জনক কে?",
+          options: {
+            a: "লিনিয়াস",
+            b: "থিওফ্রাস্টাস",
+            c: "অ্যারিস্টটল",
+            d: "ডারউইন",
+          },
+          correct: "c",
+          explanation:
+            "<p>অ্যারিস্টটলকে প্রাণিবিদ্যার জনক বলা হয়।</p><ul><li>তিনি প্রাণিজগৎ নিয়ে ব্যাপক গবেষণা করেন এবং প্রাণীদের শ্রেণিবিন্যাস ও অঙ্গসংস্থান নিয়ে গুরুত্বপূর্ণ অবদান রাখেন।</li><li>তার কাজই পরবর্তীকালে প্রাণিবিজ্ঞানের ভিত্তি স্থাপন করে।</li></ul>",
+        },
+        {
+          id: 38,
+          question: "কোন ক্ষেত্রে ক্যারোলাস লিনিয়াস-এর অবদান সবচেয়ে বেশি?",
+          options: {
+            a: "বিবর্তন",
+            b: "চিকিৎসা",
+            c: "শ্রেণিতত্ত্ব",
+            d: "বংশগতি",
+          },
+          correct: "c",
+          explanation:
+            "<p>ক্যারোলাস লিনিয়াস-এর অবদান শ্রেণিতত্ত্বে সবচেয়ে বেশি।</p><ul><li>তিনি দ্বিপদ নামকরণ পদ্ধতি প্রবর্তন করেন এবং 'সিস্টেমা ন্যাচারি' নামক গ্রন্থ রচনা করেন।</li><li>যা আধুনিক শ্রেণিবিন্যাসের ভিত্তি স্থাপন করে। তার কাজই জীবদের শ্রেণিবিন্যাসের জন্য একটি সুনির্দিষ্ট কাঠামো প্রদান করে।</li></ul>",
+        },
+        {
+          id: 39,
+          question: "অপ্রতিসম বলতে কী বুঝায়?",
+          options: {
+            a: "যে কোনো তলে সমানভাবে ভাগ করা যায়",
+            b: "কোনো তলেই সমানভাগে ভাগ করা যায় না",
+            c: "একবার মাত্র দুটি সমানভাবে ভাগ করা যায়",
+            d: "উলম্বভাবে যেকোনো তলে দুটি সমানভাবে ভাগ করা যায়",
+          },
+          correct: "b",
+          explanation:
+            "<p>অপ্রতিসম বলতে বোঝায় এমন একটি প্রাণীর দেহকে, যাকে কেন্দ্রীয় অক্ষ বরাবর কোনো তল দিয়ে ছেদ করলে দুটি সমান বা সদৃশ অংশে ভাগ করা যায় না।</p><ul><li>এমন প্রাণীর দেহের আকৃতি সুনির্দিষ্ট থাকে না এবং এরা বিভিন্ন দিকে অসমভাবে বিন্যস্ত থাকে।</li><li>অ্যামিবা বা শামুক এর প্রকৃষ্ট উদাহরণ।</li></ul>",
+        },
+        {
+          id: 40,
+          question: "কোন প্রাণিটি দ্বি-অরীয় প্রতিসম?",
+          options: {
+            a: "Metridium",
+            b: "Cliona",
+            c: "Ceoloplana",
+            d: "Aurelia",
+          },
+          correct: "c",
+          explanation:
+            "<p>Ceoloplana (সিলোপ্লানা) হলো দ্বি-অরীয় প্রতিসম প্রাণীর একটি উদাহরণ।</p><ul><li>দ্বি-অরীয় প্রতিসাম্য এমন একটি অবস্থা যেখানে প্রাণীর দেহকে কেন্দ্রীয় অক্ষ বরাবর দুটি নির্দিষ্ট তলে ছেদ করলে চারটি সমান অংশে বিভক্ত করা যায়।</li><li>এই চারটি অংশ একে অপরের প্রতিচ্ছবি হতে পারে, কিন্তু এদের মধ্যে শুধু দুটি তল দিয়েই সমান অংশে ভাগ করা যায়। টিনোফেরা পর্বের প্রাণীদের মধ্যে এই ধরনের প্রতিসাম্য দেখা যায়।</li></ul>",
+        },
+        {
+          id: 41,
+          question: "ত্রিপদ নামকরণের প্রবক্তা কোন বিজ্ঞানী?",
+          options: {
+            a: "লিনিয়াস",
+            b: "স্লেজেল",
+            c: "ল্যামার্ক",
+            d: "হ্যাক্সলে",
+          },
+          correct: "b",
+          explanation:
+            "<p>ত্রিপদ নামকরণের প্রবক্তা হলেন বিজ্ঞানী স্লেজেল।</p><ul><li>ত্রিপদ নামকরণ হলো জীবের নামকরণের একটি পদ্ধতি যেখানে প্রজাতিকে আরও ক্ষুদ্র উপ-প্রজাতিতে ভাগ করা হয়।</li><li>এর তিনটি অংশ থাকে: গণ নাম, প্রজাতি নাম এবং উপ-প্রজাতি নাম। এটি জীবের বৈচিত্র্যকে আরও সুনির্দিষ্টভাবে প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 42,
+          question: "নিচের কোনটিতে অরীয় প্রতিসাম্য দেখা যায়?",
+          options: {
+            a: "জেলিফিস",
+            b: "প্রজাপতি",
+            c: "তেলাপোকা",
+            d: "তারামাছ",
+          },
+          correct: "a",
+          explanation:
+            "<p>জেলিফিসে অরীয় প্রতিসাম্য দেখা যায়।</p><ul><li>অরীয় প্রতিসাম্য হলো এমন একটি অবস্থা যেখানে প্রাণীর দেহকে কেন্দ্রীয় অক্ষ বরাবর যেকোনো তল দিয়ে ছেদ করলে দুটি সমান ও সদৃশ অংশে ভাগ করা যায়।</li><li>জেলিফিশের দেহের গঠন গোলাকার বা ছাতার মতো হওয়ায় এটি যেকোনো দিক থেকে সমান দেখায়।</li></ul>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+              <label class="option" data-option="${option}">
+                <div class="circle">${option}</div>
+                <span class="option-text">${question.options[option]}</span>
+              </label>
+            `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                 <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                 <div class="explanation-content">
+                   <div class="explanation-label">ব্যাখ্যা:</div>
+                   ${question.explanation}
+                 </div>
+               </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+            <p class="question-label">${index + 1}. ${question.question}</p>
+            <div class="options">
+              ${optionsHTML}
+            </div>
+            ${explanationHTML}
+          `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
